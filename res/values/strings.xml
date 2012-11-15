@@ -18,6 +18,7 @@
     <string-array name="enctype_array">
         <item>None</item>
         <item>Type 1</item>
+        <item>Rijndael</item>
     </string-array>
 
 </resources>

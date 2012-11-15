@@ -1,29 +1,47 @@
 package com.example.cryptprototype;
 
-public class GCMIntentService {
+import com.google.android.gcm.GCMBaseIntentService;
 
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class GCMIntentService extends GCMBaseIntentService {
+	//in main: public static String TAG = "GCMIntentService";
+	
+	public GCMIntentService() {
+        super("Test");
+    }
+	
+	public GCMIntentService(String senderId) {
+		super(senderId);
+		Log.d("GCMIntentService", senderId);
+	}
+	
 	@Override
-	public void onRegistered(Context context, String regId) {
+	protected void onRegistered(Context context, String regId) {
+		Log.d("onRegistered", regId);
 		
 	}
 	
 	@Override
-	public void onUnregistered(Context context, String regId) {
-		
+	protected void onUnregistered(Context context, String regId) {
+		Log.d("onUnregistered", regId);
 	}
 	
 	@Override
-	public void onMessage(Context context, Intent intent) {
-		
+	protected void onMessage(Context context, Intent intent) {
+		Log.d("onMessage", String.valueOf(intent));
 	}
 	
 	@Override
-	public void onError(Context context, String errorId) {
-		
+	protected void onError(Context context, String errorId) {
+		Log.d("onError", errorId);
 	}
 	
 	@Override
-	public void onRecoverableError (Context context, String errorId) {
-		
+	protected boolean onRecoverableError (Context context, String errorId) {
+		Log.d("onRecoverableError", errorId);
+		return false;
 	}
 }
