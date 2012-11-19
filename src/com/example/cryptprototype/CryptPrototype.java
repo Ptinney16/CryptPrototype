@@ -50,6 +50,7 @@ public class CryptPrototype extends Activity {
 	private static Context context;
 	private static MessageProvider messages;
 	private static DialogBox dialog_box;
+	private static byte[] cipherKey;
 
 	/** Used to implement the Messages tab functionality **/
 	public static class MessagesFragment extends Fragment {
@@ -349,7 +350,7 @@ public class CryptPrototype extends Activity {
 			    		int etype = c.getInt(c.getColumnIndex(MessagesContract.Cols.ENCTYPE));
 			    		ContentValues values = new ContentValues();
 			    		// decrypt the text
-			    		String dtext = MessageCryptor.decrypt(etext, etype).toString();
+			    		String dtext = MessageCryptor.decrypt(etext, etype, cipherKey).toString();
 			    		values.put(MessagesContract.Cols.TEXT, dtext);
 			    		values.put(MessagesContract.Cols.ENCRYPTED, MessageCryptor.FALSE);
 			    		values.put(MessagesContract.Cols.ENCTYPE, MessageCryptor.NONE);
@@ -365,7 +366,7 @@ public class CryptPrototype extends Activity {
 			    		String dtext = c.getString(c.getColumnIndex(MessagesContract.Cols.TEXT));
 			    		ContentValues values = new ContentValues();
 			    		// encrypt the text
-			    		String etext = MessageCryptor.encrypt(dtext, enctype).toString();
+			    		String etext = MessageCryptor.encrypt(dtext, enctype, cipherKey).toString();
 			    		values.put(MessagesContract.Cols.TEXT, etext);
 			    		values.put(MessagesContract.Cols.ENCRYPTED, MessageCryptor.TRUE);
 			    		values.put(MessagesContract.Cols.ENCTYPE, enctype);
@@ -485,7 +486,7 @@ public class CryptPrototype extends Activity {
 							values.put(MessagesContract.Cols.SENDER, MessageListAdapter.user);
 							values.put(MessagesContract.Cols.RECEIVER, to.getText().toString());
 							values.put(MessagesContract.Cols.DATE, new Date().toString());
-							values.put(MessagesContract.Cols.TEXT, MessageCryptor.encrypt(text.getText(), enctype).toString());
+							values.put(MessagesContract.Cols.TEXT, MessageCryptor.encrypt(text.getText(), enctype, cipherKey).toString());
 							if (enctype != MessageCryptor.NONE)
 								values.put(MessagesContract.Cols.ENCRYPTED, MessageCryptor.TRUE);
 							else
@@ -609,10 +610,12 @@ public class CryptPrototype extends Activity {
 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
-		context = this;
-		messages  = new MessageProvider();
-		dialog_box = new DialogBox(this);
-		enctype = MessageCryptor.NONE;
+	context = this;
+	messages  = new MessageProvider();
+	dialog_box = new DialogBox(this);
+	enctype = MessageCryptor.NONE;
+	MessageCryptor.buildPrivateKey(context, MessageCryptor.KEYSIZE128);
+	cipherKey = MessageCryptor.loadPrivateKey(context, MessageCryptor.KEYSIZE128);
         super.onCreate(savedInstanceState);
 
         ActionBar actionBar = this.getActionBar();

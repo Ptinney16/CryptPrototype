@@ -1,5 +1,12 @@
 package com.example.cryptprototype.messages;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Random;
+import android.content.Context;
+
 public class MessageCryptor {
 	public static final int FALSE = 0;
 	public static final int TRUE = 1;
@@ -8,34 +15,86 @@ public class MessageCryptor {
 	public static final int NONE = 0;
 	public static final int RIJNDAEL = 1;
 
-	private static final int KEYSIZE = 128;
-	private static final byte[] cipherKey = { 73, 32, 108, 111, 118, 101, 32, 117, 32, 77, 97, 114, 116, 104, 97, 33 };
+	public static final String KEYFILE = "private_key";
+	public static final int KEYSIZE128 = 128;
+	public static final int KEYSIZE192 = 192;
+	public static final int KEYSIZE256 = 256;
+	//private static final byte[] cipherKey = { 73, 32, 108, 111, 118, 101, 32, 117, 32, 77, 97, 114, 116, 104, 97, 33 };
 
-	public static CharSequence encrypt(CharSequence s, int type) {
+	public static boolean keyExists(Context context) {
+		String[] fileList = context.fileList();
+		for(String file : fileList) {
+			if (file.equals(KEYFILE))
+				return true;
+		}
+		return false;
+	}
+
+	public static void buildPrivateKey(Context context, int bits) {
+		if (!keyExists(context)) {
+			try {
+				FileOutputStream fos = context.openFileOutput(KEYFILE, Context.MODE_PRIVATE);
+				Random generator = new Random();
+				byte[] cipherKey;
+				if (bits != KEYSIZE128 && bits != KEYSIZE192 && bits != KEYSIZE256)
+					cipherKey = new byte[KEYSIZE128/8];
+				else
+					cipherKey = new byte[bits/8];
+				generator.nextBytes(cipherKey);
+				fos.write(cipherKey);
+				fos.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static byte[] loadPrivateKey(Context context, int bits) {
+		try {
+			FileInputStream fis = context.openFileInput(KEYFILE);
+			byte[] cipherKey;
+			if (bits != KEYSIZE128 && bits != KEYSIZE192 && bits != KEYSIZE256)
+				cipherKey = new byte[KEYSIZE128/8];
+			else
+				cipherKey = new byte[bits/8];
+			fis.read(cipherKey, 0, cipherKey.length);
+			fis.close();
+			return cipherKey;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static CharSequence encrypt(CharSequence s, int type, byte[] cipherKey) {
 		switch(type) {
 			case TYPE1:
 				return typeOneEncrypt(s);
 			case RIJNDAEL:
-				return AESEncrypt(s);
+				return AESEncrypt(s, cipherKey);
 			default:
 				return s;
 		}
 	}
 
-	public static CharSequence decrypt(CharSequence s, int type) {
+	public static CharSequence decrypt(CharSequence s, int type, byte[] cipherKey) {
 		switch(type) {
 			case TYPE1:
 				return typeOneDecrypt(s);
 			case RIJNDAEL:
-				return AESDecrypt(s);
+				return AESDecrypt(s, cipherKey);
 			default:
 				return s;
 		}
 	}
 
-	private static CharSequence AESEncrypt(CharSequence s) {
+	private static CharSequence AESEncrypt(CharSequence s, byte[] cipherKey) {
 		Rijndael encryptor = new Rijndael();
-		encryptor.makeKey(cipherKey, KEYSIZE, Rijndael.DIR_ENCRYPT);
+		encryptor.makeKey(cipherKey, cipherKey.length*8, Rijndael.DIR_ENCRYPT);
 		String[] textblocks = blockify(s.toString());
 		String result = "";
 		for (int i = 0; i < textblocks.length; i++) {
@@ -48,9 +107,9 @@ public class MessageCryptor {
 		return result;
 	}
 
-	private static CharSequence AESDecrypt(CharSequence s) {
+	private static CharSequence AESDecrypt(CharSequence s, byte[] cipherKey) {
 		Rijndael decryptor = new Rijndael();
-		decryptor.makeKey(cipherKey, KEYSIZE, Rijndael.DIR_DECRYPT);
+		decryptor.makeKey(cipherKey, cipherKey.length*8, Rijndael.DIR_DECRYPT);
 		String[] textblocks = blockifyBinary(s.toString());
 		String result = "";
 		for (int i = 0; i < textblocks.length; i++) {
