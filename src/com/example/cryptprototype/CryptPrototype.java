@@ -349,14 +349,31 @@ public class CryptPrototype extends Activity {
 			    		int etype = c.getInt(c.getColumnIndex(MessagesContract.Cols.ENCTYPE));
 			    		ContentValues values = new ContentValues();
 			    		// decrypt the text
-			    		values.put(MessagesContract.Cols.TEXT, MessageCryptor.decrypt(etext, etype).toString());
+			    		String dtext = MessageCryptor.decrypt(etext, etype).toString();
+			    		values.put(MessagesContract.Cols.TEXT, dtext);
 			    		values.put(MessagesContract.Cols.ENCRYPTED, MessageCryptor.FALSE);
 			    		values.put(MessagesContract.Cols.ENCTYPE, MessageCryptor.NONE);
 			    		// update the row's info (text, encrypted and enc_type)
 			    		messages.update(MessagesContract.UriInfo.CONTENT_URI.buildUpon().appendPath(_id).build(), values, null, null);
 			    		// change button to unenc_color
 			    		((Button) v).setBackgroundColor(unenc_color);
-			    		((TextView) ((View) v.getParent()).findViewById(R.id.Text)).setText(MessageCryptor.decrypt(etext, etype).toString());
+			    		((TextView) ((View) v.getParent()).findViewById(R.id.Text)).setText(dtext);
+			    	} else if (((ColorDrawable) ((Button) v).getBackground()).getColor() == unenc_color && enctype != MessageCryptor.NONE) {
+			    		// get the corresponding row from the database
+			    		Cursor c = messages.query(MessagesContract.UriInfo.CONTENT_URI.buildUpon().appendPath(_id).build(), null, null, null, null);
+			    		c.moveToFirst();
+			    		String dtext = c.getString(c.getColumnIndex(MessagesContract.Cols.TEXT));
+			    		ContentValues values = new ContentValues();
+			    		// encrypt the text
+			    		String etext = MessageCryptor.encrypt(dtext, enctype).toString();
+			    		values.put(MessagesContract.Cols.TEXT, etext);
+			    		values.put(MessagesContract.Cols.ENCRYPTED, MessageCryptor.TRUE);
+			    		values.put(MessagesContract.Cols.ENCTYPE, enctype);
+			    		// update the row's info (text, encrypted and enc_type)
+			    		messages.update(MessagesContract.UriInfo.CONTENT_URI.buildUpon().appendPath(_id).build(), values, null, null);
+			    		// change button to enc_color
+			    		((Button) v).setBackgroundColor(enc_color);
+			    		((TextView) ((View) v.getParent()).findViewById(R.id.Text)).setText(etext);
 			    	}
 			    }
 			});
