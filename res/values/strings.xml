@@ -14,7 +14,8 @@
     <string name="sent">Sent</string>
     <string name="reply">Reply</string>
     <string name="delete">Delete</string>
-    <string name="enc_type">Encryption Type:</string>
+    <string name="enc_type">Encryption Type</string>
+    <string name="username">Username</string>
     <string-array name="enctype_array">
         <item>None</item>
         <item>Type 1</item>

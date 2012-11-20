@@ -18,7 +18,6 @@ public class MessageListAdapter extends SimpleCursorAdapter implements Filterabl
 	public static final String[] in_from = new String[] { MessagesContract.Cols.SENDER, MessagesContract.Cols.DATE };
 	public static final String[] out_from = new String[] { MessagesContract.Cols.RECEIVER, MessagesContract.Cols.DATE };
 	public static final int[] to = new int[] { R.id.Name, R.id.Date };
-	public static final String user = "User";
 
 	private Context context;
 	private boolean inbox; // true = inbox, false = sent messages

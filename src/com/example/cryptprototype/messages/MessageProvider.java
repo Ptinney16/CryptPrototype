@@ -125,4 +125,16 @@ public class MessageProvider extends ContentProvider {
                 throw new UnsupportedOperationException("URI: " + uri + " not supported.");
 		}
 	}
+
+	public int updateUsername(String username, String oldusername) {
+		int rows = 0;
+		ContentValues userSend = new ContentValues();
+		ContentValues userReceive = new ContentValues();
+		userSend.put(MessagesContract.Cols.SENDER, username);
+		userReceive.put(MessagesContract.Cols.RECEIVER, username);
+		rows += messageDb.getWritableDatabase().update(MessagesContract.TABLE_NAME, userSend, MessagesContract.Cols.SENDER + " = '" + oldusername + "'", null);
+		rows += messageDb.getWritableDatabase().update(MessagesContract.TABLE_NAME, userReceive, MessagesContract.Cols.RECEIVER + " = '" + oldusername + "'", null);
+		context.getContentResolver().notifyChange(MessagesContract.UriInfo.CONTENT_URI, null);
+		return rows;
+	}
 }

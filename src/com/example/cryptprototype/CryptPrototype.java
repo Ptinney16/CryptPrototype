@@ -1,7 +1,10 @@
 package com.example.cryptprototype;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Date;
-
 import com.example.cryptprototype.messages.DateFormatter;
 import com.example.cryptprototype.messages.MessageCryptor;
 import com.example.cryptprototype.messages.MessageProvider;
@@ -51,6 +54,7 @@ public class CryptPrototype extends Activity {
 	private static MessageProvider messages;
 	private static DialogBox dialog_box;
 	private static byte[] cipherKey;
+	private static String username;
 
 	/** Used to implement the Messages tab functionality **/
 	public static class MessagesFragment extends Fragment {
@@ -129,8 +133,8 @@ public class CryptPrototype extends Activity {
 		static final String[] PROJECTION = new String[] { MessagesContract.Cols._ID, MessagesContract.Cols.SENDER, MessagesContract.Cols.DATE };
 
 		// This is the select criteria
-		static final String SELECTION = "(" + MessagesContract.Cols.RECEIVER + " = '" + MessageListAdapter.user + "' )";
-		//static final String SELECTION = "((" + MessagesContract.Cols.SENDER + " NOTNULL) AND (" + MessagesContract.Cols.SENDER + " != '' ) AND (" + MessagesContract.Cols.SENDER + " != '" + MessageListAdapter.user + "' ))";
+		static final String SELECTION = "(" + MessagesContract.Cols.RECEIVER + " = '" + username + "' )";
+		//static final String SELECTION = "((" + MessagesContract.Cols.SENDER + " NOTNULL) AND (" + MessagesContract.Cols.SENDER + " != '' ) AND (" + MessagesContract.Cols.SENDER + " != '" + username + "' ))";
 
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
@@ -223,8 +227,8 @@ public class CryptPrototype extends Activity {
 		static final String[] PROJECTION = new String[] { MessagesContract.Cols._ID, MessagesContract.Cols.RECEIVER, MessagesContract.Cols.DATE };
 
 		// This is the select criteria
-		static final String SELECTION = "(" + MessagesContract.Cols.SENDER + " = '" + MessageListAdapter.user + "' )";
-		//static final String SELECTION = "((" + MessagesContract.Cols.RECEIVER + " NOTNULL) AND (" + MessagesContract.Cols.RECEIVER + " != '' ) AND (" + MessagesContract.Cols.RECEIVER + " != '" + MessageListAdapter.user + "' ))";
+		static final String SELECTION = "(" + MessagesContract.Cols.SENDER + " = '" + username + "' )";
+		//static final String SELECTION = "((" + MessagesContract.Cols.RECEIVER + " NOTNULL) AND (" + MessagesContract.Cols.RECEIVER + " != '' ) AND (" + MessagesContract.Cols.RECEIVER + " != '" + username + "' ))";
 
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
@@ -380,7 +384,7 @@ public class CryptPrototype extends Activity {
 			});
 
 			name = cursor.getString(cursor.getColumnIndex(MessagesContract.Cols.SENDER));
-			if (name.equals(MessageListAdapter.user)) // if looking in the inbox
+			if (name.equals(username)) // if looking in the inbox
 				name = cursor.getString(cursor.getColumnIndex(MessagesContract.Cols.RECEIVER));
 			// Next set the name of the entry.
 			TextView name_text = (TextView) v.findViewById(R.id.Name);
@@ -483,7 +487,7 @@ public class CryptPrototype extends Activity {
 							messages.clear();
 						else {
 							ContentValues values = new ContentValues();
-							values.put(MessagesContract.Cols.SENDER, MessageListAdapter.user);
+							values.put(MessagesContract.Cols.SENDER, username);
 							values.put(MessagesContract.Cols.RECEIVER, to.getText().toString());
 							values.put(MessagesContract.Cols.DATE, new Date().toString());
 							values.put(MessagesContract.Cols.TEXT, MessageCryptor.encrypt(text.getText(), enctype, cipherKey).toString());
@@ -553,6 +557,32 @@ public class CryptPrototype extends Activity {
 				public void onNothingSelected(AdapterView<?> parent) {
 			        // Another interface callback
 			    }
+			});
+
+			TextView userField = (TextView) v.findViewById(R.id.Username);
+			userField.setText(username);
+			/*userField.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					((TextView) v).setText("");
+				}
+			});*/
+			userField.setOnEditorActionListener(new OnEditorActionListener() {
+				@Override
+				public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+					if (actionId == EditorInfo.IME_ACTION_DONE) {
+						String oldusername = username;
+						username = v.getText().toString();
+						username = removeEndingSpace(username);
+						if (username.length() > 32)
+							username = username.substring(0, 32);
+						messages.updateUsername(username, oldusername);
+						saveUsername(username);
+						dialog_box.showMessage("Username set!");
+						return true;
+					}
+					return false;
+				}
 			});
 	        return v;
 	    }
@@ -656,5 +686,45 @@ public class CryptPrototype extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.crypt_prototype, menu);
         return true;
+    }
+
+    private static void saveUsername(String username) {
+		try {
+			FileOutputStream fos;
+			fos = context.openFileOutput("username", Context.MODE_PRIVATE);
+			fos.write(username.getBytes());
+			fos.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+
+    private static String loadUsername() {
+    	if (usernameExists()) {
+    		try {
+    			FileInputStream fis = context.openFileInput("username");
+    			byte[] byteform = new byte[32];
+    			int len = fis.read(byteform, 0, byteform.length);
+    			fis.close();
+    			String result = new String(byteform);
+    			return result.substring(0, len);
+    		} catch (FileNotFoundException e) {
+    			e.printStackTrace();
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		}
+    	}
+    	return "User";
+    }
+
+    private static boolean usernameExists() {
+    	String[] fileList = context.fileList();
+		for(String file : fileList) {
+			if (file.equals("username"))
+				return true;
+		}
+		return false;
     }
 }
